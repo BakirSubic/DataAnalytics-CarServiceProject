@@ -112,6 +112,42 @@ Ensure your MySQL server is running. Then, using a tool like DBeaver, MySQL Work
    * `sql/schema_operational.sql` → creates tables in `CarAnalyticsDB`
    * `sql/schema_dwh.sql` → creates the galaxy schema in `CarAnalyticsDWH`
 
+### 6.5 Configure the Orchestration Scripts
+
+For the automation to work outside of an IDE like PyCharm, the `.bat` orchestration scripts need to know exactly where to find the Python interpreter associated with your project's virtual environment.
+
+**1. Find Your Python Interpreter Path**
+
+   *   Open your project in PyCharm.
+   *   Go to **File** -> **Settings**.
+   *   In the Settings window, navigate to **Project: [Your Project Name]** -> **Python Interpreter**.
+   *   The path to the interpreter is displayed at the top. It will look something like this:
+       `C:\Users\YourName\PyCharmProjects\YourProject\.venv\Scripts\python.exe`
+   *   **Copy this full path** to your clipboard.
+
+**2. Edit the Batch Files**
+
+   You will need to paste the copied path into two files: `run_once_setup.bat` and `run_daily_incremental.bat`.
+
+   *   **Open `run_once_setup.bat`** in a text editor (like Notepad or VS Code).
+   *   Find the line that starts with `SET PYTHON_EXE=`.
+   *   Replace the placeholder path with the path you just copied. Ensure it is enclosed in double quotes.
+
+     **Example:**
+     ```batch
+     REM --- Define the EXACT path to the Python executable from your PyCharm project's interpreter settings ---
+     REM !! PASTE THE PATH YOU COPIED FROM PYCHARM SETTINGS BELOW !!
+     SET PYTHON_EXE="C:\Users\Bakir Subic\PyCharmMiscProject\.venv\Scripts\python.exe"
+     ```
+
+   *   **Save and close** the file.
+
+   *   **Open `run_daily_incremental.bat`** and repeat the exact same process: find the `SET PYTHON_EXE=` line and paste your correct path.
+
+   *   **Save and close** the file.
+
+Your orchestration scripts are now correctly configured and ready to be executed.
+
 ### 7. Run the One-Time Initial Setup
 To populate the source database with synthetic data and perform a full initial ETL load:
 ````bash
@@ -134,3 +170,48 @@ This script does two things:
 2. Runs `incremental_load.py` to apply only the new/changed data into `CarAnalyticsDWH`
 
 > This process is fully automated via Windows Task Scheduler to run at midnight daily, but it can also be run manually at any time.
+
+### 9. Automate the Daily Incremental Load
+
+The final step is to use the Windows Task Scheduler to run your `run_daily_incremental.bat` script automatically every day. This completes the project's orchestration requirement.
+
+**1. Open Task Scheduler**
+
+   *   Press the **Windows Key**, type **Task Scheduler**, and open the application.
+
+**2. Create a New Task**
+
+   *   In the **Actions** pane on the right side, click **Create Basic Task...**.
+
+   
+
+**3. Name Your Task**
+
+   *   **Name:** `Car Analytics Daily ETL`
+   *   **Description:** `Runs the daily incremental ETL process for the car analytics data warehouse.`
+   *   Click **Next**.
+
+**4. Set the Trigger (The Schedule)**
+
+   *   Choose **Daily** for when you want the task to start.
+   *   Click **Next**.
+   *   Set a time for the task to run. A common time for ETL jobs is late at night, such as **2:00:00 AM**.
+   *   Ensure it is set to recur every **1** day.
+   *   Click **Next**.
+
+   
+
+**5. Define the Action**
+
+   *   Select **Start a program**.
+   *   Click **Next**.
+   *   In the "Program/script" field, click the **Browse...** button.
+   *   Navigate to your project's root directory and select the **`run_daily_incremental.bat`** file.
+   *   Click **Open**.
+
+   
+
+**6. Finalize the Task**
+
+   *   Review the summary on the final screen to ensure everything is correct.
+   *   Click **Finish**.
