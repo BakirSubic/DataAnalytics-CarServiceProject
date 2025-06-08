@@ -29,4 +29,3 @@ ECHO ******************** An error occurred. Script halted. ********************
 ECHO.
 
 :End
-PAUSE
