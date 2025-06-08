@@ -1,7 +1,6 @@
 import pandas as pd
 from sqlalchemy import create_engine, text, inspect
-from datetime import datetime, timedelta, date as datetime_date, time as datetime_time
-import numpy as np
+from datetime import datetime, timedelta, time as datetime_time
 import os
 from dotenv import load_dotenv
 import traceback
@@ -45,7 +44,6 @@ def get_db_engine(db_config):
         return None
 
 def get_table_columns(engine, table_name, schema=None):
-    """Gets column names for a table."""
     try:
         inspector = inspect(engine)
         columns = [col['name'] for col in inspector.get_columns(table_name, schema=schema)]
@@ -58,14 +56,13 @@ source_engine = get_db_engine(SOURCE_DB_CONFIG)
 dwh_engine = get_db_engine(DWH_DB_CONFIG)
 
 
-def populate_archive_accidents_csv(csv_path, engine_dwh, chunk_size=50000, row_limit=None):
+def populate_archive_accidents_csv(csv_path, engine_dwh, load_ts, chunk_size=50000, row_limit=None):
     if not engine_dwh:
         print("DWH engine not available. Aborting archive_accidents_csv population.")
         return
 
     print(f"\n--- Populating archive_accidents_csv from {csv_path} ---")
 
-    load_ts = datetime.now()
     all_inserted_count = 0
 
     try:
@@ -121,14 +118,13 @@ def populate_archive_accidents_csv(csv_path, engine_dwh, chunk_size=50000, row_l
         traceback.print_exc()
 
 
-def populate_archive_customers_from_source_db(engine_source, engine_dwh):
+def populate_archive_customers_from_source_db(engine_source, engine_dwh, load_ts):
     if not engine_source or not engine_dwh:
         print("Source or DWH engine not available. Aborting archive_customers population.")
         return
 
     print(f"\n--- Populating archive_customers from source CarAnalyticsDB ---")
 
-    load_ts = datetime.now()
     try:
         with engine_source.connect() as s_conn, engine_dwh.begin() as d_conn:
             source_customers_df = pd.read_sql_query(
@@ -157,14 +153,13 @@ def populate_archive_customers_from_source_db(engine_source, engine_dwh):
         traceback.print_exc()
 
 
-def populate_archive_vehicles_from_source_db(engine_source, engine_dwh):
+def populate_archive_vehicles_from_source_db(engine_source, engine_dwh, load_ts):
     if not engine_source or not engine_dwh:
         print("Source or DWH engine not available. Aborting archive_vehicles population.")
         return
 
     print(f"\n--- Populating archive_vehicles from source CarAnalyticsDB ---")
 
-    load_ts = datetime.now()
     try:
         with engine_source.connect() as s_conn, engine_dwh.begin() as d_conn:
             source_vehicles_df = pd.read_sql_query(
@@ -193,14 +188,13 @@ def populate_archive_vehicles_from_source_db(engine_source, engine_dwh):
         traceback.print_exc()
 
 
-def populate_archive_employees_from_source_db(engine_source, engine_dwh):
+def populate_archive_employees_from_source_db(engine_source, engine_dwh, load_ts):
     if not engine_source or not engine_dwh:
         print("Source or DWH engine not available. Aborting archive_employees population.")
         return
 
     print(f"\n--- Populating archive_employees from source CarAnalyticsDB ---")
 
-    load_ts = datetime.now()
     try:
         with engine_source.connect() as s_conn, engine_dwh.begin() as d_conn:
             source_employees_df = pd.read_sql_query(
@@ -229,14 +223,13 @@ def populate_archive_employees_from_source_db(engine_source, engine_dwh):
         traceback.print_exc()
 
 
-def populate_archive_parts_inventory_from_source_db(engine_source, engine_dwh):
+def populate_archive_parts_inventory_from_source_db(engine_source, engine_dwh, load_ts):
     if not engine_source or not engine_dwh:
         print("Source or DWH engine not available. Aborting archive_parts_inventory population.")
         return
 
     print(f"\n--- Populating archive_parts_inventory from source CarAnalyticsDB ---")
 
-    load_ts = datetime.now()
     try:
         with engine_source.connect() as s_conn, engine_dwh.begin() as d_conn:
             source_parts_df = pd.read_sql_query(
@@ -265,14 +258,13 @@ def populate_archive_parts_inventory_from_source_db(engine_source, engine_dwh):
         traceback.print_exc()
 
 
-def populate_archive_service_appointments_from_source_db(engine_source, engine_dwh):
+def populate_archive_service_appointments_from_source_db(engine_source, engine_dwh, load_ts):
     if not engine_source or not engine_dwh:
         print("Source or DWH engine not available. Aborting archive_service_appointments population.")
         return
 
     print(f"\n--- Populating archive_service_appointments from source CarAnalyticsDB ---")
 
-    load_ts = datetime.now()
     try:
         with engine_source.connect() as s_conn, engine_dwh.begin() as d_conn:
             query = """
@@ -341,14 +333,13 @@ def populate_archive_service_appointments_from_source_db(engine_source, engine_d
         traceback.print_exc()
 
 
-def populate_archive_service_details_from_source_db(engine_source, engine_dwh):
+def populate_archive_service_details_from_source_db(engine_source, engine_dwh, load_ts):
     if not engine_source or not engine_dwh:
         print("Source or DWH engine not available. Aborting archive_service_details population.")
         return
 
     print(f"\n--- Populating archive_service_details from source CarAnalyticsDB ---")
 
-    load_ts = datetime.now()
     try:
         with engine_source.connect() as s_conn, engine_dwh.begin() as d_conn:
             query = """
@@ -1303,6 +1294,8 @@ def populate_fact_service_parts_usage_from_archive(engine_dwh, archive_details_t
 def main_etl():
     print("Starting ETL pipeline...")
 
+    initial_load_time = datetime.now()
+
     if not source_engine or not dwh_engine:
         print("Database engine(s) not initialized. Aborting ETL.")
         return
@@ -1327,13 +1320,13 @@ def main_etl():
         traceback.print_exc()
         return
 
-    populate_archive_accidents_csv(ACCIDENTS_CSV_PATH, dwh_engine, chunk_size=CSV_CHUNK_SIZE, row_limit=CSV_SUBSET_ROWS)
-    populate_archive_customers_from_source_db(source_engine, dwh_engine)
-    populate_archive_vehicles_from_source_db(source_engine, dwh_engine)
-    populate_archive_employees_from_source_db(source_engine, dwh_engine)
-    populate_archive_parts_inventory_from_source_db(source_engine, dwh_engine)
-    populate_archive_service_appointments_from_source_db(source_engine, dwh_engine)
-    populate_archive_service_details_from_source_db(source_engine, dwh_engine)
+    populate_archive_accidents_csv(ACCIDENTS_CSV_PATH, dwh_engine, chunk_size=CSV_CHUNK_SIZE, row_limit=CSV_SUBSET_ROWS, load_ts=initial_load_time)
+    populate_archive_customers_from_source_db(source_engine, dwh_engine, load_ts=initial_load_time)
+    populate_archive_vehicles_from_source_db(source_engine, dwh_engine, load_ts=initial_load_time)
+    populate_archive_employees_from_source_db(source_engine, dwh_engine, load_ts=initial_load_time)
+    populate_archive_parts_inventory_from_source_db(source_engine, dwh_engine, load_ts=initial_load_time)
+    populate_archive_service_appointments_from_source_db(source_engine, dwh_engine, load_ts=initial_load_time)
+    populate_archive_service_details_from_source_db(source_engine, dwh_engine, load_ts=initial_load_time)
     print("\n--- Archive Layer Population Complete ---")
 
     print("\n--- Phase 2: Star Schema Layer Population (Full Refresh from Archive) ---")

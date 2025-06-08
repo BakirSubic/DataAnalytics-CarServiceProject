@@ -1,6 +1,6 @@
 import mysql.connector
 from faker import Faker
-from datetime import datetime, timedelta
+from datetime import datetime
 import random
 import sys
 import os
@@ -370,16 +370,18 @@ def simulate_cancel_appointment(conn):
 if __name__ == "__main__":
     conn = get_db_connection()
     if conn:
-        perform_initial_load(conn)
-
-        print("\n--- Simulating Incremental Changes ---")
-        simulate_new_customer(conn)
-        simulate_new_service_appointment(conn)
-        simulate_update_vehicle_mileage(conn)
-        simulate_cancel_appointment(conn)
-        simulate_new_service_appointment(conn)
+        if len(sys.argv) > 1 and sys.argv[1] == '--incremental':
+            print("\n--- Running in INCREMENTAL mode: Simulating a small number of daily changes ---")
+            simulate_new_customer(conn)
+            simulate_new_service_appointment(conn)
+            simulate_update_vehicle_mileage(conn)
+            simulate_cancel_appointment(conn)
+        else:
+            print("\n--- Running in FULL SETUP mode: Performing initial data load ---")
+            perform_initial_load(conn)
 
         conn.close()
         print("\nDatabase operations complete. Connection closed.")
     else:
         print("Failed to establish database connection. Script aborted.", file=sys.stderr)
+        sys.exit(1)

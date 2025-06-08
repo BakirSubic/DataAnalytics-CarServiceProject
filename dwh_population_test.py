@@ -40,7 +40,6 @@ def get_dwh_engine_for_test():
 
 
 def run_query_for_test(engine, query, params=None):
-    """Executes a SQL query and returns the result as a Pandas DataFrame for testing."""
     try:
         with engine.connect() as connection:
             if params:
@@ -55,13 +54,8 @@ def run_query_for_test(engine, query, params=None):
 
 
 class TestDWHPopulation(unittest.TestCase):
-    """
-    Test suite for validating the Data Warehouse population.
-    """
-
     @classmethod
     def setUpClass(cls):
-        """Set up database connection once for all tests in this class."""
         cls.engine = get_dwh_engine_for_test()
         if not cls.engine:
             raise unittest.SkipTest("DWH Engine could not be initialized. Skipping DWH tests.")
@@ -82,7 +76,6 @@ class TestDWHPopulation(unittest.TestCase):
         cls.all_tables = cls.archive_tables + cls.dim_tables + cls.fact_tables
 
     def test_01_row_counts_not_zero_for_core_tables(self):
-        """Test that core tables (archives, dims, facts) are not empty."""
         print("\n--- Test: Row Counts ---")
         for table_name in self.all_tables:
             with self.subTest(table=table_name):
@@ -94,7 +87,6 @@ class TestDWHPopulation(unittest.TestCase):
         print("Row count checks: Passed (all tables have > 0 rows).\n")
 
     def test_02_archive_temporal_columns(self):
-        """Test 'valid_to_timestamp' in archive tables is set to the far-future date."""
         print("\n--- Test: Archive Temporal Columns (valid_to_timestamp) ---")
         far_future_dt_object = datetime.strptime(FAR_FUTURE_DATETIME_STR, "%Y-%m-%d %H:%M:%S")
 
@@ -110,7 +102,6 @@ class TestDWHPopulation(unittest.TestCase):
         print("Archive temporal column checks: Passed.\n")
 
     def test_03_fact_accidents_foreign_keys(self):
-        """Test essential foreign keys in fact_accidents are not NULL."""
         print("\n--- Test: fact_accidents Foreign Keys ---")
         fk_columns = ['date_key', 'location_key', 'original_accident_id']
         for fk_col in fk_columns:
@@ -122,7 +113,6 @@ class TestDWHPopulation(unittest.TestCase):
         print("fact_accidents essential FK checks: Passed.\n")
 
     def test_04_fact_service_appointments_foreign_keys(self):
-        """Test essential foreign keys in fact_service_appointments are not NULL."""
         print("\n--- Test: fact_service_appointments Foreign Keys ---")
         fk_columns = ['date_key', 'customer_key', 'vehicle_key', 'service_type_key', 'original_appointment_id']
         for fk_col in fk_columns:
@@ -134,7 +124,6 @@ class TestDWHPopulation(unittest.TestCase):
         print("fact_service_appointments essential FK checks: Passed.\n")
 
     def test_05_fact_service_parts_usage_foreign_keys(self):
-        """Test essential foreign keys in fact_service_parts_usage are not NULL."""
         print("\n--- Test: fact_service_parts_usage Foreign Keys ---")
         fk_columns = ['date_key', 'vehicle_key', 'part_key', 'original_service_detail_id', 'original_appointment_id']
         for fk_col in fk_columns:
@@ -146,7 +135,6 @@ class TestDWHPopulation(unittest.TestCase):
         print("fact_service_parts_usage FK checks: Passed.\n")
 
     def test_06_dimension_uniqueness(self):
-        """Test uniqueness constraints for various dimension tables."""
         print("\n--- Test: Dimension Uniqueness ---")
         uniqueness_checks = [
             ('dim_customer', ['original_customer_id']),
@@ -170,7 +158,6 @@ class TestDWHPopulation(unittest.TestCase):
         print("Dimension uniqueness checks: Passed.\n")
 
     def test_07_spot_check_fact_accidents_join(self):
-        """Spot check a joined record from fact_accidents."""
         print("\n--- Test: Spot Check fact_accidents Join ---")
         sample_fact_query = """
         SELECT fa.original_accident_id, dd.full_date, dl.city
@@ -187,7 +174,6 @@ class TestDWHPopulation(unittest.TestCase):
         print("Spot check fact_accidents: Passed.\n")
 
     def test_08_spot_check_fact_service_appointments_join(self):
-        """Spot check a joined record from fact_service_appointments."""
         print("\n--- Test: Spot Check fact_service_appointments Join ---")
         sample_service_appt_query = """
         SELECT fsa.original_appointment_id, dc.customer_name, dv.make, dst.service_type_name
