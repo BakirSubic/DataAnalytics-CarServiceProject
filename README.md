@@ -28,7 +28,9 @@ The system is fully automated, from generating sample source data to processing 
 
 * **Dual Database Architecture:**
     * `CarAnalyticsDB`: A normalized OLTP database designed to simulate day-to-day business operations.
+    ![caranalyticsdb.png](images/caranalyticsdb.png)
     * `CarAnalyticsDWH`: A dimensional data warehouse with a galaxy schema, optimized for analytical queries (OLAP).
+    ![caranalyticsdb.png](images/caranalyticsdwh.png)
 
 * **Comprehensive Galaxy Schema:** The DWH features a clean and intuitive galaxy schema. This includes fact tables for service appointments, parts usage, and accidents, linked to shared dimension tables like `dim_date`, `dim_customer`, `dim_vehicle`, and `dim_location`.
 
