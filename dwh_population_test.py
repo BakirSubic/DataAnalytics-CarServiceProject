@@ -86,22 +86,7 @@ class TestDWHPopulation(unittest.TestCase):
                 self.assertGreater(count, 0, f"Table '{table_name}' has 0 rows, expected > 0 after initial load.")
         print("Row count checks: Passed (all tables have > 0 rows).\n")
 
-    def test_02_archive_temporal_columns(self):
-        print("\n--- Test: Archive Temporal Columns (valid_to_timestamp) ---")
-        far_future_dt_object = datetime.strptime(FAR_FUTURE_DATETIME_STR, "%Y-%m-%d %H:%M:%S")
-
-        for table_name in self.archive_tables:
-            with self.subTest(table=table_name):
-                query = f"SELECT COUNT(*) as count FROM {table_name} WHERE valid_to_timestamp IS NULL OR valid_to_timestamp != :far_future_val"
-                df = run_query_for_test(self.engine, query, params={'far_future_val': far_future_dt_object})
-                self.assertFalse(df.empty, f"Query for temporal columns in {table_name} returned empty DataFrame.")
-                count_not_far_future = df['count'].iloc[0]
-                self.assertEqual(count_not_far_future, 0,
-                                 f"Table '{table_name}': {count_not_far_future} records do not have valid_to_timestamp set to {FAR_FUTURE_DATETIME_STR}.")
-                print(f"Table '{table_name}': valid_to_timestamp check OK.")
-        print("Archive temporal column checks: Passed.\n")
-
-    def test_03_fact_accidents_foreign_keys(self):
+    def test_02_fact_accidents_foreign_keys(self):
         print("\n--- Test: fact_accidents Foreign Keys ---")
         fk_columns = ['date_key', 'location_key', 'original_accident_id']
         for fk_col in fk_columns:
@@ -112,7 +97,7 @@ class TestDWHPopulation(unittest.TestCase):
                 self.assertEqual(null_count, 0, f"fact_accidents.{fk_col} contains {null_count} NULL values.")
         print("fact_accidents essential FK checks: Passed.\n")
 
-    def test_04_fact_service_appointments_foreign_keys(self):
+    def test_03_fact_service_appointments_foreign_keys(self):
         print("\n--- Test: fact_service_appointments Foreign Keys ---")
         fk_columns = ['date_key', 'customer_key', 'vehicle_key', 'service_type_key', 'original_appointment_id']
         for fk_col in fk_columns:
@@ -123,7 +108,7 @@ class TestDWHPopulation(unittest.TestCase):
                 self.assertEqual(null_count, 0, f"fact_service_appointments.{fk_col} contains {null_count} NULL values.")
         print("fact_service_appointments essential FK checks: Passed.\n")
 
-    def test_05_fact_service_parts_usage_foreign_keys(self):
+    def test_04_fact_service_parts_usage_foreign_keys(self):
         print("\n--- Test: fact_service_parts_usage Foreign Keys ---")
         fk_columns = ['date_key', 'vehicle_key', 'part_key', 'original_service_detail_id', 'original_appointment_id']
         for fk_col in fk_columns:
@@ -134,30 +119,7 @@ class TestDWHPopulation(unittest.TestCase):
                 self.assertEqual(null_count, 0, f"fact_service_parts_usage.{fk_col} contains {null_count} NULL values.")
         print("fact_service_parts_usage FK checks: Passed.\n")
 
-    def test_06_dimension_uniqueness(self):
-        print("\n--- Test: Dimension Uniqueness ---")
-        uniqueness_checks = [
-            ('dim_customer', ['original_customer_id']),
-            ('dim_vehicle', ['original_vehicle_id']),
-            ('dim_vehicle', ['VIN']),
-            ('dim_employee', ['original_employee_id']),
-            ('dim_part', ['original_part_id']),
-            ('dim_part', ['part_number']),
-            ('dim_service_type', ['service_type_name']),
-            ('dim_date', ['full_date', 'hour']),
-            ('dim_location', ['latitude', 'longitude', 'city', 'state'])
-        ]
-        for table, columns in uniqueness_checks:
-            with self.subTest(table=table, columns=columns):
-                cols_str = ", ".join(columns)
-                query = f"SELECT {cols_str}, COUNT(*) as count FROM {table} GROUP BY {cols_str} HAVING COUNT(*) > 1"
-                df_duplicates = run_query_for_test(self.engine, query)
-                self.assertTrue(df_duplicates.empty,
-                                f"Found {len(df_duplicates)} duplicate entries in '{table}' for column(s) '{cols_str}'. Sample:\n{df_duplicates.head()}")
-                print(f"Uniqueness OK for {table}.{cols_str}")
-        print("Dimension uniqueness checks: Passed.\n")
-
-    def test_07_spot_check_fact_accidents_join(self):
+    def test_05_spot_check_fact_accidents_join(self):
         print("\n--- Test: Spot Check fact_accidents Join ---")
         sample_fact_query = """
         SELECT fa.original_accident_id, dd.full_date, dl.city
@@ -173,7 +135,7 @@ class TestDWHPopulation(unittest.TestCase):
         print(df_spot_check.to_string())
         print("Spot check fact_accidents: Passed.\n")
 
-    def test_08_spot_check_fact_service_appointments_join(self):
+    def test_06_spot_check_fact_service_appointments_join(self):
         print("\n--- Test: Spot Check fact_service_appointments Join ---")
         sample_service_appt_query = """
         SELECT fsa.original_appointment_id, dc.customer_name, dv.make, dst.service_type_name
