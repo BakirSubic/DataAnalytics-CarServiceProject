@@ -165,7 +165,10 @@ CREATE TABLE dim_customer (
     state VARCHAR(50),
     zip_code VARCHAR(20),
     registration_date DATE,
-    UNIQUE INDEX idx_original_customer_id (original_customer_id)
+    dim_valid_from DATETIME COMMENT 'Effective date from which this version is valid',
+    dim_valid_to DATETIME COMMENT 'Effective date until which this version was valid',
+    is_current BOOLEAN COMMENT 'Flag indicating if this is the current version of the record',
+    INDEX idx_dim_customer_orig_id_current (original_customer_id, is_current)
 );
 
 CREATE TABLE dim_vehicle (

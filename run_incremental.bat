@@ -7,7 +7,7 @@ ECHO =======================================================
 ECHO Pipeline started at %TIME% on %DATE%.
 ECHO.
 
-SET PYTHON_EXE="C:\Users\Bakir Subic\PyCharmMiscProject\.venv\Scripts\python.exe"
+SET PYTHON_EXE="C:\Users\bakir\OneDrive\Dokumenti\GitHub\DataAnalytics-CarServiceProject\.venv\Scripts\python.exe"
 
 CD /D "%~dp0"
 ECHO Now running from: %CD%
